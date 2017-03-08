@@ -6,3 +6,6 @@ API Documentation
 
 .. autoclass:: nukedatastore.NukeDataStore
     :members:
+
+.. autoclass:: nukedatastore.NukeAPICache
+    :members:

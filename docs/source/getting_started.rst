@@ -7,6 +7,9 @@ To get started with ``nukedatastore``, type in the Nuke Script Editor:
 
     import nukedatastore
 
+NukeDataStore
+-------------
+
 To initialise a ``NukeDataStore``, type:
 
 .. code-block:: python
@@ -66,3 +69,30 @@ To un-freeze, type:
 .. code-block:: python
 
     ds.unfreeze()
+
+NukeAPICache
+------------
+
+Working with the ``NukeAPICache`` is very similar. To register an API, type:
+
+.. code-block:: python
+
+    api_cache = nukedatastore. NukeAPICache('api_cache')
+    api.cache.register('project_data', 'https://project.your.domain.com')
+
+To read the cached API data, type:
+
+.. code-block:: python
+
+    api_cache['project_data']
+
+To update the API data, type:
+
+.. code-block:: python
+
+    api_cache.update('project_data')
+
+.. note::
+
+    ``NukeAPICache`` supports freezing and unfreezing just like
+    ``NukeDataStore``.

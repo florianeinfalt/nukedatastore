@@ -96,7 +96,7 @@ Working with the ``NukeAPICache`` is very similar. To register an API, type:
 
 .. code-block:: python
 
-    api_cache = nukedatastore. NukeAPICache('api_cache')
+    api_cache = nukedatastore.NukeAPICache('api_cache')
     api.cache.register('project_data', 'https://project.your.domain.com')
 
 To read the cached API data, type:

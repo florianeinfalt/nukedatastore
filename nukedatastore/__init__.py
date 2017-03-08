@@ -287,6 +287,20 @@ class NukeDataStore(object):
 
 
 class NukeAPICache(NukeDataStore):
+    """
+    NukeAPICache class, inherits from :class:`~nukedatastore.NukeDataStore`.
+
+    :param name: Data store name
+    :type name: str
+
+    Usage:
+
+    >>> from nukedatastore import NukeAPICache
+    >>> api_cache = NukeAPICache('api_cache')
+    >>> api_cache.register('project_data', 'https://project.your.domain.com/api')
+    >>> print api_cache['project_data']
+    >>> {'id': 1234, 'name': 'project name'}
+    """
     def __init__(self, name):
         super(NukeAPICache, self).__init__(name)
 

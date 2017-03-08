@@ -9,7 +9,7 @@ test_requirements = ['pytest', 'pytest-cov',
 
 setup(
     name = 'nukedatastore',
-    version = '0.1.0',
+    version = '0.1.1',
     description='A library for basic data persistence in Nuke',
     long_description=readme,
     url='https://github.com/florianeinfalt/nukedatastore',

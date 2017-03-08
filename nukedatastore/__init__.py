@@ -35,7 +35,7 @@ except:
         raise RuntimeError('Import nukedatastore from within Nuke')
     nuke = import_nuke()
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 __all__ = []
 
 DS_PREFIX = 'ds_'

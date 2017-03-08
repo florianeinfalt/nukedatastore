@@ -3,6 +3,9 @@ import re
 import sys
 import json
 import platform
+import datetime
+
+import requests
 
 from nukeuuid import get_nodes, set_uuid, NukeUUIDError
 
@@ -65,17 +68,6 @@ class NukeDataStore(object):
     """
     def __init__(self, name):
         self.store = self._init(name)
-
-    def __getitem__(self, key):
-        try:
-            return self._get_item(key)
-        except KeyError as e:
-            raise KeyError(e)
-
-    def __setitem__(self, key, value):
-        if self.is_frozen():
-            raise NukeDataStoreError('Cannot mutate frozen NukeDataStore')
-        self._set_item(key, value)
 
     @property
     def store(self):
@@ -198,6 +190,12 @@ class NukeDataStore(object):
         """
         return json.loads(value)
 
+    def __getitem__(self, key):
+        try:
+            return self._get_item(key)
+        except KeyError as e:
+            raise KeyError(e)
+
     def _get_item(self, key, ds_attr=True):
         """
         Given a ``key`` get data attribute ``key``. Raise :class:`KeyError`, if
@@ -216,6 +214,19 @@ class NukeDataStore(object):
                 return self._from_json(self.store[key].value())
         except NameError:
             raise KeyError(key)
+
+    def _check_frozen(self):
+        """
+        Check if instance is frozen and raise
+        :class:`~nukedatastore.NukeDataStoreError` if frozen.
+        """
+        if self.is_frozen():
+            raise NukeDataStoreError('Cannot mutate frozen {0}'.format(
+                self.__class__.__name__))
+
+    def __setitem__(self, key, value):
+        self._check_frozen()
+        self._set_item(key, value)
 
     def _set_item(self, key, value, ds_attr=True):
         """
@@ -273,3 +284,127 @@ class NukeDataStore(object):
     def __repr__(self):
         return '<NukeDataStore: {0}, Keys: {1}>'.format(self.store.name(),
                                                         len(self.list()))
+
+
+class NukeAPICache(NukeDataStore):
+    def __init__(self, name):
+        super(NukeAPICache, self).__init__(name)
+
+    def __setitem__(self, key, value):
+        raise NotImplementedError('Please update API cache instead of trying '
+                                  'to set the data manually, use '
+                                  'NukeDataStore as a generic data store')
+
+    def _check_exists(self, name):
+        """
+        Check if API is already registered on the instance, raise
+        :class:`~nukedatastore.NukeDataStoreError` if registered.
+        """
+        try:
+            self._get_api(name)
+            raise NukeDataStoreError('API {0} already registered'.format(name))
+        except KeyError:
+            pass
+
+    def register(self, name, url, update=True, ignore_exists=True):
+        """
+        Given a ``name`` and a ``url``, register a new API in the cache.
+
+        :param name: API name
+        :type name: str
+        :param url: API URL
+        :type url: str
+        :param update: Update API data after registering, default: ``True``
+        :type update: bool
+        :param ignore_exists: Ignore API is already registered, default: ``True``
+        :type ignore_exists: bool
+        """
+        self._check_frozen()
+        if not ignore_exists:
+            self._check_exists(name)
+        self._set_item(name, [url, None, None])
+        if update:
+            self.update(name)
+
+    def timestamp(self, *args):
+        """
+        Given \*args, return timestamps for specified APIs, if no APIs are
+        specified, return timestamps for all registered APIs.
+
+        :param \*args: API names
+        :type \*args: str
+        :return: List of timestamp tuples (api_name, timestamp)
+        :rtype: list
+        """
+        if not args:
+            args = self.list()
+        response = []
+        for api_name in args:
+            response.append((api_name, self._get_api(api_name)[1]))
+        return response
+
+    def update(self, *args):
+        """
+        Given \*args, update specified APIs, if no APIs are specified, update
+        all registered APIs.
+
+        :param \*args: API names
+        :type \*args: str
+        """
+        self._check_frozen()
+        if not args:
+            args = self.list()
+        for api_name in args:
+            url = self._get_api(api_name)[0]
+            request = requests.get(url)
+            try:
+                request.raise_for_status()
+            except requests.RequestException:
+                raise NukeDataStoreError('Updating {0} failed'.format(
+                    api_name))
+            self._set_item(api_name, [url,
+                                      datetime.datetime.utcnow().isoformat(),
+                                      request.json()])
+
+    def _get_api(self, key):
+        """
+        Given a ``key`` get API data for ``key``. Raise :class:`KeyError`, if
+        key does not exist.
+
+        :param key: Data store key
+        :type key: str
+        :param ds_attr: Prefix ``key`` with DS_PREFIX
+        :type ds_attr: bool
+
+        API format:
+
+        >>> [url, timestamp, data]
+        """
+        try:
+            return self._from_json(
+                self.store[self._get_ds_attr(key)].value())
+        except NameError:
+            raise KeyError(key)
+
+    def _get_item(self, key, ds_attr=True):
+        """
+        Given a ``key`` get data attribute ``key``. Raise :class:`KeyError`, if
+        key does not exist.
+
+        :param key: Data store key
+        :type key: str
+        :param ds_attr: Prefix ``key`` with DS_PREFIX
+        :type ds_attr: bool
+        """
+        try:
+            if ds_attr:
+                return self._from_json(
+                    self.store[self._get_ds_attr(key)].value())[-1]
+            else:
+                return self._from_json(self.store[key].value())
+        except NameError:
+            raise KeyError(key)
+
+    def __repr__(self):
+        return '<NukeAPICache: {0}, APIs: {1}>'.format(self.store.name(),
+                                                       len(self.list()))

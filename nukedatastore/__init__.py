@@ -2,9 +2,10 @@ import os
 import re
 import sys
 import json
-import platform
 import datetime
+import platform
 
+import deepdiff
 import requests
 
 from nukeuuid import get_nodes, set_uuid, NukeUUIDError
@@ -357,6 +358,46 @@ class NukeAPICache(NukeDataStore):
             response.append((api_name, self._get_api(api_name)[1]))
         return response
 
+    def _get_request(self, url):
+        """
+        Given a ``url``, perform a GET request on that URL and make sure
+        status code is valid.
+
+        :param url: URL
+        :type url: str
+        """
+        request = requests.get(url)
+        try:
+            request.raise_for_status()
+        except requests.RequestException:
+            raise NukeDataStoreError('Request failed')
+        return request
+
+    def diff(self, *args):
+        """
+        Given \*args, diff specified APIs, if no APIs are specified, diff
+        all registered APIs.
+
+        :param \*args: API names
+        :type \*args: str
+        :return: Diff
+        :rtype: dict
+        """
+        if not args:
+            args = self.list()
+        diff = {}
+        for api_name in args:
+            api = self._get_api(api_name)
+            url = api[0]
+            content = api[2]
+            try:
+                request = self._get_request(url)
+            except NukeDataStoreError:
+                raise NukeDataStoreError('Diff\'ing {0} failed'.format(
+                    api_name))
+            diff[api_name] = deepdiff.DeepDiff(content, request.json())
+        return diff
+
     def update(self, *args):
         """
         Given \*args, update specified APIs, if no APIs are specified, update
@@ -369,11 +410,12 @@ class NukeAPICache(NukeDataStore):
         if not args:
             args = self.list()
         for api_name in args:
-            url = self._get_api(api_name)[0]
-            request = requests.get(url)
+            api = self._get_api(api_name)
+            url = api[0]
+            content = api[2]
             try:
-                request.raise_for_status()
-            except requests.RequestException:
+                request = self._get_request(url)
+            except NukeDataStoreError:
                 raise NukeDataStoreError('Updating {0} failed'.format(
                     api_name))
             self._set_item(api_name, [url,

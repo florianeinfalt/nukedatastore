@@ -96,3 +96,10 @@ To update the API data, type:
 
     ``NukeAPICache`` supports freezing and unfreezing just like
     ``NukeDataStore``.
+
+To diff existing API data with new API data, type:
+
+.. code-block:: python
+
+    api_cache.diff('project_data')
+    # {'project_data': {'values_changed': {"root['headers']['X-Request-Id']": {'new_value': u'f5800c5e-4edb-4509-8339-4bcdf0b32732', 'old_value': u'd8ed6737-e5c8-49aa-b42e-58eb2ba472b9'}}}}

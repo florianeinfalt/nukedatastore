@@ -2,13 +2,13 @@ nukedatastore
 =============
 
 .. image:: https://img.shields.io/pypi/l/nukedatastore.svg
-    :target: https://pypi.python.org/pypi/nukedatastore
+    :target: https://pypi.org/project/nukedatastore/
 .. image:: https://img.shields.io/pypi/pyversions/nukedatastore.svg
-    :target: https://pypi.python.org/pypi/nukedatastore
+    :target: https://pypi.org/project/nukedatastore/
 .. image:: https://img.shields.io/pypi/v/nukedatastore.svg
-    :target: https://pypi.python.org/pypi/nukedatastore
+    :target: https://pypi.org/project/nukedatastore/
 .. image:: https://img.shields.io/pypi/wheel/nukedatastore.svg
-    :target: https://pypi.python.org/pypi/nukedatastore
+    :target: https://pypi.org/project/nukedatastore/
 .. image:: https://readthedocs.org/projects/nukedatastore/badge/?version=latest
     :target: https://readthedocs.org/projects/nukedatastore/?badge=latest
 

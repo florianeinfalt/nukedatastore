@@ -58,14 +58,12 @@ def test_api_cache_crud_frozen(api_cache):
     api_cache.unfreeze()
 
 
-def test_api_chache_diff(api_cache):
+def test_api_cache_diff(api_cache):
     diff = api_cache.diff()
     assert diff
     print diff
     assert 'project_data' in diff
-    assert 'values_changed' in diff['project_data']
-    assert 'root[\'headers\'][\'X-Request-Id\']' in diff['project_data']['values_changed']
-
+    assert 'values_changed' not in diff['project_data']
 
 def test_api_cache_diff_invalid(api_cache):
     temp_cache = NukeAPICache('temp_cache')

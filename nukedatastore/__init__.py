@@ -41,6 +41,18 @@ __all__ = []
 
 DS_PREFIX = 'ds_'
 FROZEN_ATTR = 'nds_frozen'
+UPDATE_CMD = r"""import nukedatastore
+
+api_cache = nukedatastore.NukeAPICache(nuke.thisNode().name())
+
+for api in api_cache.list():
+    diff = api_cache.diff(api)
+    if diff[api]:
+        result = nuke.ask('API {api} has the following changes on the server:\n\n{diff}\n\nUpdate {api}?'.format(api=api, diff=diff))
+        if result:
+            api_cache.update(api)
+    else:
+        continue"""
 
 
 class NukeDataStoreError(ValueError):
@@ -68,6 +80,15 @@ class NukeDataStore(object):
     >>> {'id': 1234, 'name': 'project name'}
     """
     def __init__(self, name):
+        self._create_store(name)
+
+    def _create_store(self, name):
+        """
+        Given a ``name``, create a data store
+
+        :param name: Data store name
+        :type name: str
+        """
         self.store = self._init(name)
 
     @property
@@ -98,7 +119,7 @@ class NukeDataStore(object):
             raise NukeDataStoreError('Data store must be a Nuke node')
         self._store = node
 
-    def _init(self, name):
+    def _init(self, name, api_cache=False):
         """
         Given a ``name``, initialise a :class:`~nukedatastore.NukeDataStore`
         with the same ``name``. Find existing
@@ -107,6 +128,8 @@ class NukeDataStore(object):
 
         :param node: Node name
         :type node: str
+        :param api_cache: Whether the data store is an API cache
+        :type api_cache: bool
         :return: Data store node
         :rtype: :class:`~nuke.Node`
         """
@@ -128,8 +151,15 @@ class NukeDataStore(object):
             store = nuke.nodes.NoOp(name=name)
             set_uuid(store, **kw)
             store.addKnob(self._create_knob(FROZEN_ATTR))
-        for attr, value in attrs.iteritems():
-            store[attr].setValue(value)
+            for attr, value in attrs.iteritems():
+                store[attr].setValue(value)
+            if api_cache:
+                actions_tab = nuke.Tab_Knob('actions', 'Actions')
+                update_btn = nuke.PyScript_Knob('update', 'Update APIs')
+                update_btn.setCommand(UPDATE_CMD)
+                update_btn.setFlag(nuke.STARTLINE)
+                store.addKnob(actions_tab)
+                store.addKnob(update_btn)
         return store
 
     def _create_knob(self, attr):
@@ -304,6 +334,15 @@ class NukeAPICache(NukeDataStore):
     """
     def __init__(self, name):
         super(NukeAPICache, self).__init__(name)
+
+    def _create_store(self, name):
+        """
+        Given a ``name``, create a data store
+
+        :param name: Data store name
+        :type name: str
+        """
+        self.store = self._init(name, api_cache=True)
 
     def __setitem__(self, key, value):
         raise NotImplementedError('Please update API cache instead of trying '
